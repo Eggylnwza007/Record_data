@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:task/screen/signin_screen.dart'; // สำหรับการจัดการผู้ใช้
 
 class TodoScreen extends StatefulWidget {
   const TodoScreen({super.key});
@@ -63,9 +65,17 @@ class _TodoScreenState extends State<TodoScreen> {
     );
   }
 
+  // ฟังก์ชันสำหรับออกจากระบบ
+  void logout() async {
+    await FirebaseAuth.instance.signOut(); // ทำการออกจากระบบ
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const SigninScreen()), // เปลี่ยนไปที่หน้าล็อกอิน
+    );
+  }
+
   // ฟังก์ชันสำหรับแก้ไขงานที่มีอยู่
   void editTodoHandle(BuildContext context, DocumentSnapshot task) {
-    // ตั้งค่า TextController ให้เป็นค่าที่มีอยู่แล้ว
     _titleController.text = task['title'];
     _descriptionController.text = task['description'];
 
@@ -109,12 +119,10 @@ class _TodoScreenState extends State<TodoScreen> {
     );
   }
 
-  // ฟังก์ชันสำหรับลบงาน
   void onDelete(DocumentSnapshot task) {
     task.reference.delete(); // ลบข้อมูล
   }
 
-  // ฟังก์ชันสำหรับเปลี่ยนสถานะงาน
   void onTap(DocumentSnapshot task) {
     task.reference.update({
       'status': task['status'] == 'incomplete' ? 'complete' : 'incomplete',
@@ -127,6 +135,12 @@ class _TodoScreenState extends State<TodoScreen> {
       appBar: AppBar(
         title: const Text("Todo"),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: logout, // เรียกฟังก์ชัน logout
+          ),
+        ],
       ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance.collection('tasks').snapshots(),
@@ -148,19 +162,19 @@ class _TodoScreenState extends State<TodoScreen> {
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () {
-                        editTodoHandle(context, task); // เรียกฟังก์ชันแก้ไขงาน
+                        editTodoHandle(context, task);
                       },
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),
                       onPressed: () {
-                        onDelete(task); // เรียกฟังก์ชันลบงาน
+                        onDelete(task);
                       },
                     ),
                   ],
                 ),
                 onTap: () {
-                  onTap(task); // เรียกฟังก์ชันเปลี่ยนสถานะงาน
+                  onTap(task);
                 },
               );
             },
@@ -169,7 +183,7 @@ class _TodoScreenState extends State<TodoScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          addTodoHandle(context); // เรียกฟังก์ชันเพิ่มงานใหม่
+          addTodoHandle(context);
         },
         child: const Icon(Icons.add),
       ),
